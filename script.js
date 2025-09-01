@@ -2,11 +2,64 @@ document.addEventListener('DOMContentLoaded', () => {
     const App = {
         // Initialize all functionalities
         init() {
+            this.initNameAnimation();
             this.initThemeToggle();
             this.initMobileNav();
             this.initScrollAnimations();
             this.initContactForm();
         },
+
+        // --- NAME REVEAL ANIMATION ---
+        initNameAnimation() {
+            const nameHeading = document.getElementById('name-heading');
+            if (!nameHeading) return; // Exit if element not found
+
+            const finalName = "Akash Kumar";
+            // Characters to flicker through during the scramble
+            const charset = "ΣΠ_?#*<>/%&@$";
+
+            const randomChar = () => charset[Math.floor(Math.random() * charset.length)];
+
+            // --- TIMING ADJUSTMENTS ---
+            const revealDelay = 60; // FASTER: Delay between each letter revealing.
+            const animationSpeed = 30; // FASTER: Speed of the scramble flicker.
+            const scrambleIterations = 8; // FASTER: How many times each letter scrambles.
+            // -------------------------
+
+            // Set initial text to empty spans that will be filled
+            nameHeading.innerHTML = finalName.split('')
+                .map(char => `<span>${char === ' ' ? '&nbsp;' : ''}</span>`)
+                .join('');
+
+            const spans = nameHeading.querySelectorAll('span');
+
+            // Animate each letter
+            finalName.split('').forEach((finalChar, index) => {
+                // Skip spaces
+                if (finalChar === ' ') return;
+
+                // Stagger the start of each letter's animation
+                setTimeout(() => {
+                    let iteration = 0;
+                    const span = spans[index];
+
+                    const intervalId = setInterval(() => {
+                        span.textContent = randomChar(); // Set a random character
+                        span.classList.add('scrambling');
+
+                        iteration++;
+
+                        // If the scramble is done, reveal the final letter
+                        if (iteration >= scrambleIterations) {
+                            clearInterval(intervalId);
+                            span.textContent = finalChar;
+                            span.classList.remove('scrambling');
+                        }
+                    }, animationSpeed);
+                }, index * revealDelay);
+            });
+        },
+
 
         // --- THEME TOGGLE (DARK/LIGHT MODE) ---
         initThemeToggle() {
@@ -29,8 +82,7 @@ document.addEventListener('DOMContentLoaded', () => {
         initMobileNav() {
             const hamburger = document.getElementById('hamburger');
             const nav = document.getElementById('nav-links');
-            const focusableElements = 'a[href], button:not([disabled])';
-
+            
             const toggleNav = () => {
                 const isActive = nav.classList.toggle('active');
                 hamburger.classList.toggle('active');
@@ -54,7 +106,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 });
             });
 
-            // Close with Escape key
             document.addEventListener('keydown', (e) => {
                 if (e.key === 'Escape' && nav.classList.contains('active')) {
                     toggleNav();
@@ -64,22 +115,19 @@ document.addEventListener('DOMContentLoaded', () => {
         
         // --- FOCUS TRAPPING FOR ACCESSIBILITY ---
         trapFocus(element) {
-            const focusableEls = element.querySelectorAll(focusableElements);
+            const focusableEls = element.querySelectorAll('a[href], button:not([disabled])');
             const firstFocusableEl = focusableEls[0];
             const lastFocusableEl = focusableEls[focusableEls.length - 1];
             const KEYCODE_TAB = 9;
 
             element.addEventListener('keydown', (e) => {
-                if (e.key !== 'Tab' && e.keyCode !== KEYCODE_TAB) {
-                    return;
-                }
-
-                if (e.shiftKey) { // Shift + Tab
+                if (e.key !== 'Tab' && e.keyCode !== KEYCODE_TAB) return;
+                if (e.shiftKey) {
                     if (document.activeElement === firstFocusableEl) {
                         lastFocusableEl.focus();
                         e.preventDefault();
                     }
-                } else { // Tab
+                } else {
                     if (document.activeElement === lastFocusableEl) {
                         firstFocusableEl.focus();
                         e.preventDefault();
@@ -93,7 +141,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const revealObserver = new IntersectionObserver((entries, observer) => {
                 entries.forEach(entry => {
                     if (entry.isIntersecting) {
-                        if (entry.target.dataset.staggerChildren) {
+                        if (entry.target.dataset.staggerChildren !== undefined) {
                             const children = entry.target.querySelectorAll('.reveal');
                             children.forEach((child, index) => {
                                 child.style.transitionDelay = `${index * 100}ms`;
@@ -107,7 +155,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 threshold: 0.1,
             });
 
-            document.querySelectorAll('.reveal').forEach(el => {
+            document.querySelectorAll('.reveal, [data-stagger-children]').forEach(el => {
                 revealObserver.observe(el);
             });
         },
@@ -124,7 +172,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
                     if (formData.get('access_key') === 'YOUR_ACCESS_KEY_HERE') {
                         status.textContent = 'Please configure your form access key.';
-                        status.style.color = '#ffc107'; // Warning color
+                        status.style.color = '#ffc107';
                         return;
                     }
 
@@ -147,7 +195,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         }
                     } catch (error) {
                         status.textContent = 'An error occurred. Please try again.';
-                        status.style.color = '#dc3545'; // Error color
+                        status.style.color = '#dc3545';
                     } finally {
                         submitButton.disabled = false;
                         setTimeout(() => {
